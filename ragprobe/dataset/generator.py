@@ -24,6 +24,15 @@ import json
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Callable, Any
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    filename="Logs/ragprobe_dataset_generator.log")
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -173,14 +182,17 @@ class DatasetGenerator:
 
             # Skip very short chunks (not enough info to ask about)
             if len(content.strip()) < 50:
+                logger.info(f"Skipping short chunk (ID: {chunk_id}) — too little content.")
                 continue
-
+            
+            logger.info(f"Generating QA for chunk (ID: {chunk_id}) with {questions_per_chunk} questions.")
             try:
                 if questions_per_chunk == 1:
                     qa_pairs = self._generate_single_qa(content)
                 else:
                     qa_pairs = self._generate_multi_qa(content, questions_per_chunk)
 
+                logger.info(f"Successfully generated {len(qa_pairs)} QA pairs for chunk (ID: {chunk_id}).")
                 for qa in qa_pairs:
                     samples.append(EvalSample(
                         question=qa["question"],
@@ -191,6 +203,7 @@ class DatasetGenerator:
                     ))
             except Exception as e:
                 # Skip chunks where generation fails — don't crash the whole run
+                logger.error(f"Error generating QA for chunk (ID: {chunk_id}): {e}")
                 continue
 
         return EvalDataset(
@@ -204,6 +217,7 @@ class DatasetGenerator:
         prompt = QUESTION_GENERATION_PROMPT.format(chunk=chunk[:3000])
         response = self.llm_fn(prompt)
         parsed = self._parse_json(response)
+        logger.info(f"Successfully generated single QA pair")
 
         if isinstance(parsed, dict) and "question" in parsed:
             return [parsed]
@@ -214,6 +228,7 @@ class DatasetGenerator:
         prompt = MULTI_QUESTION_PROMPT.format(chunk=chunk[:3000], count=count)
         response = self.llm_fn(prompt)
         parsed = self._parse_json(response)
+        logger.info(f"Successfully generated {count} QA pairs")
 
         if isinstance(parsed, list):
             return [p for p in parsed if isinstance(p, dict) and "question" in p]
