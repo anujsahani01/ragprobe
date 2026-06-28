@@ -1,11 +1,31 @@
 [project]
 name = "ragprobe"
 version = "0.1.0"
-description = "Pluggable evaluation framework for RAG pipelines"
+description = "Pluggable evaluation framework for RAG pipelines — auto-generates test datasets, scores per-component, monitors quality live."
 requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Anuj Sahani", email = "anujsahani01@example.com" },
+]
+keywords = ["rag", "evaluation", "llm", "deepeval", "retrieval", "ai", "testing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "deepeval>=4.0.0",
     "pydantic>=2.0.0",
+    "openai>=1.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
 ]
 
 [build-system]
@@ -14,3 +34,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ragprobe"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100

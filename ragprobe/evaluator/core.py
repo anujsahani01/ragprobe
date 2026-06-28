@@ -7,7 +7,7 @@ Orchestrates evaluation of any RAG system by:
 3. Producing per-component and aggregate scores
 
 Usage:
-    from rag_eval import RagEvaluator, EvalAdapter
+    from ragprobe import RagEvaluator, EvalAdapter
 
     evaluator = RagEvaluator(adapter=my_adapter, judge_model="gpt-4o-mini")
     results = evaluator.evaluate(dataset)
@@ -30,8 +30,8 @@ from deepeval.metrics import (
 )
 from deepeval import evaluate
 
-from rag_eval.adapters.base import EvalAdapter, RetrievalResult, GenerationResult
-from rag_eval.dataset.generator import EvalDataset, EvalSample
+from ragprobe.adapters.base import EvalAdapter, RetrievalResult, GenerationResult
+from ragprobe.dataset.generator import EvalDataset, EvalSample
 
 
 @dataclass
