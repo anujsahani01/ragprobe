@@ -1,7 +1,18 @@
 """Evaluator — the core engine that scores your RAG pipeline."""
 
-from ragprobe.evaluator.core import RagEvaluator
-from ragprobe.evaluator.live import live_eval
+from ragprobe.evaluator.core import RagEvaluator, EvalResults, SampleResult, ComponentScore
+from ragprobe.evaluator.live import live_eval, get_scores, get_scores_summary, export_scores, clear_scores
 from ragprobe.evaluator.component_scores import ComponentScorer
 
-__all__ = ["RagEvaluator", "live_eval", "ComponentScorer"]
+__all__ = [
+    "RagEvaluator",
+    "EvalResults",
+    "SampleResult",
+    "ComponentScore",
+    "live_eval",
+    "get_scores",
+    "get_scores_summary",
+    "export_scores",
+    "clear_scores",
+    "ComponentScorer",
+]
