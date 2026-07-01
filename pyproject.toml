@@ -1,6 +1,6 @@
 [project]
 name = "ragprobe"
-version = "0.1.0"
+version = "0.2.0"
 description = "Pluggable evaluation framework for RAG pipelines — auto-generates test datasets, scores per-component, monitors quality live."
 requires-python = ">=3.11"
 license = "MIT"
