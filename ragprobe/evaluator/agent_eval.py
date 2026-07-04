@@ -339,35 +339,50 @@ class AgentEvaluator:
         """
         Extract tool definitions from an MCP server (without creating an evaluator).
 
+        Handles both sync and async (FastMCP 3.x) servers.
+
         Usage:
             tools = AgentEvaluator.extract_tools_from_mcp(my_server)
-            # Use tools list however you want
         """
+        import asyncio
+
         tool_defs = []
 
-        # FastMCP 2.x/3.x: _tool_manager.tools or _tools
-        if hasattr(mcp_server, '_tool_manager'):
+        # FastMCP 3.x uses async list_tools()
+        if hasattr(mcp_server, 'list_tools'):
+            try:
+                try:
+                    loop = asyncio.get_running_loop()
+                    # Already in async context — shouldn't happen in normal usage
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        tools = pool.submit(asyncio.run, mcp_server.list_tools()).result()
+                except RuntimeError:
+                    # No running loop — safe to use asyncio.run
+                    tools = asyncio.run(mcp_server.list_tools())
+
+                for tool in tools:
+                    tool_defs.append(ToolDefinition(
+                        name=getattr(tool, 'name', str(tool)),
+                        description=getattr(tool, 'description', '').strip(),
+                    ))
+            except Exception:
+                pass
+
+        # Fallback: try _tool_manager._tools (older FastMCP)
+        if not tool_defs and hasattr(mcp_server, '_tool_manager'):
             manager = mcp_server._tool_manager
             if hasattr(manager, '_tools'):
                 for name, tool in manager._tools.items():
-                    desc = getattr(tool, 'description', '') or getattr(tool, 'fn', lambda: None).__doc__ or ''
+                    desc = getattr(tool, 'description', '') or ''
+                    if not desc and hasattr(tool, 'fn') and tool.fn:
+                        desc = tool.fn.__doc__ or ''
                     tool_defs.append(ToolDefinition(name=name, description=desc.strip()))
-        elif hasattr(mcp_server, '_tools'):
-            for name, tool in mcp_server._tools.items():
-                desc = getattr(tool, 'description', '') or getattr(tool, '__doc__', '') or ''
-                tool_defs.append(ToolDefinition(name=name, description=desc.strip()))
-        elif hasattr(mcp_server, 'list_tools'):
-            tools = mcp_server.list_tools()
-            for tool in tools:
-                tool_defs.append(ToolDefinition(
-                    name=getattr(tool, 'name', str(tool)),
-                    description=getattr(tool, 'description', '').strip(),
-                ))
 
         if not tool_defs:
             raise ValueError(
                 "Could not auto-extract tools from MCP server. "
-                "Tried: _tool_manager._tools, _tools, list_tools(). "
+                "Tried: list_tools(), _tool_manager._tools. "
                 "Use AgentEvaluator.from_tool_list() or pass tools manually."
             )
 

@@ -215,39 +215,32 @@ class MCPTracer:
 
     def _intercept_tools(self, server: Any) -> None:
         """
-        Monkey-patch the MCP server's tool functions to auto-record calls.
+        Intercept tool calls on a FastMCP 3.x server.
 
-        This wraps each registered tool so every call is automatically traced.
+        FastMCP 3.x uses async call_tool(). We wrap it to record calls.
         """
-        if hasattr(server, '_tool_manager') and hasattr(server._tool_manager, '_tools'):
-            tools_dict = server._tool_manager._tools
-        elif hasattr(server, '_tools'):
-            tools_dict = server._tools
-        else:
-            return  # Can't intercept
+        import asyncio
 
-        for name, tool in tools_dict.items():
-            original_fn = getattr(tool, 'fn', None)
-            if original_fn is None:
-                continue
+        if not hasattr(server, 'call_tool'):
+            return
 
-            # Create wrapper that records the call
-            def make_wrapper(tool_name: str, orig_fn):
-                def wrapper(*args, **kwargs):
-                    start = time.time()
-                    result = orig_fn(*args, **kwargs)
-                    duration = (time.time() - start) * 1000
+        original_call_tool = server.call_tool
 
-                    self.record_call(
-                        tool_name=tool_name,
-                        args=kwargs or ({"args": args} if args else {}),
-                        output=result,
-                        duration_ms=duration,
-                    )
-                    return result
-                return wrapper
+        async def intercepted_call_tool(name: str, arguments: dict | None = None, **kwargs):
+            import time as _time
+            start = _time.time()
+            result = await original_call_tool(name, arguments=arguments, **kwargs)
+            duration = (_time.time() - start) * 1000
 
-            tool.fn = make_wrapper(name, original_fn)
+            self.record_call(
+                tool_name=name,
+                args=arguments or {},
+                output=str(result)[:500] if result else "",
+                duration_ms=duration,
+            )
+            return result
+
+        server.call_tool = intercepted_call_tool
 
     # =========================================================================
     # Output
