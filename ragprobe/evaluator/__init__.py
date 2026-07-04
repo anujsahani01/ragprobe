@@ -3,7 +3,7 @@
 from ragprobe.evaluator.core import RagEvaluator, EvalResults, SampleResult, ComponentScore
 from ragprobe.evaluator.live import live_eval, get_scores, get_scores_summary, export_scores, clear_scores
 from ragprobe.evaluator.component_scores import ComponentScorer
-from ragprobe.evaluator.agent_eval import AgentEvaluator, AgentTestCase, AgentDataset, AgentEvalResults
+from ragprobe.evaluator.agent_eval import AgentEvaluator, AgentTrace, AgentEvalResults, ToolDefinition
 
 __all__ = [
     "RagEvaluator",
@@ -17,7 +17,7 @@ __all__ = [
     "clear_scores",
     "ComponentScorer",
     "AgentEvaluator",
-    "AgentTestCase",
-    "AgentDataset",
+    "AgentTrace",
     "AgentEvalResults",
+    "ToolDefinition",
 ]

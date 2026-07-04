@@ -5,7 +5,7 @@ description = "Pluggable evaluation framework for RAG pipelines — auto-generat
 requires-python = ">=3.11"
 license = "MIT"
 authors = [
-    { name = "Anuj Sahani", email = "anujsahani01@example.com" },
+    { name = "Anuj Sahani", email = "sahaniiianuj@gmail.com" },
 ]
 keywords = ["rag", "evaluation", "llm", "deepeval", "retrieval", "ai", "testing"]
 classifiers = [
