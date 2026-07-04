@@ -48,7 +48,7 @@ from ragprobe.evaluator.agent_eval import (
     ToolDefinition,
 )
 from ragprobe.reporting import ReportGenerator
-from ragprobe.tracing import trace_agent, traced_tool, TraceStore
+from ragprobe.tracing import trace_agent, traced_tool, TraceStore, MCPTracer
 
 __version__ = "0.3.0"
 __all__ = [
@@ -73,6 +73,7 @@ __all__ = [
     "trace_agent",
     "traced_tool",
     "TraceStore",
+    "MCPTracer",
     # Reporting
     "ReportGenerator",
     # Live evaluation

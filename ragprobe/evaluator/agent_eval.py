@@ -324,34 +324,54 @@ class AgentEvaluator:
     @classmethod
     def from_mcp_server(cls, mcp_server: Any, **kwargs) -> "AgentEvaluator":
         """
-        Auto-extract tool definitions from a FastMCP server instance.
+        Auto-extract tool definitions from a FastMCP server instance and create evaluator.
 
         Usage:
             from src.mcp.server import create_mcp_server
             server = create_mcp_server()
             evaluator = AgentEvaluator.from_mcp_server(server)
         """
+        tool_defs = cls.extract_tools_from_mcp(mcp_server)
+        return cls(tools=tool_defs, **kwargs)
+
+    @staticmethod
+    def extract_tools_from_mcp(mcp_server: Any) -> list[ToolDefinition]:
+        """
+        Extract tool definitions from an MCP server (without creating an evaluator).
+
+        Usage:
+            tools = AgentEvaluator.extract_tools_from_mcp(my_server)
+            # Use tools list however you want
+        """
         tool_defs = []
-        # FastMCP stores tools in server._tool_manager or similar
-        # Try common patterns
-        if hasattr(mcp_server, '_tools'):
+
+        # FastMCP 2.x/3.x: _tool_manager.tools or _tools
+        if hasattr(mcp_server, '_tool_manager'):
+            manager = mcp_server._tool_manager
+            if hasattr(manager, '_tools'):
+                for name, tool in manager._tools.items():
+                    desc = getattr(tool, 'description', '') or getattr(tool, 'fn', lambda: None).__doc__ or ''
+                    tool_defs.append(ToolDefinition(name=name, description=desc.strip()))
+        elif hasattr(mcp_server, '_tools'):
             for name, tool in mcp_server._tools.items():
                 desc = getattr(tool, 'description', '') or getattr(tool, '__doc__', '') or ''
-                tool_defs.append(ToolDefinition(name=name, description=desc))
+                tool_defs.append(ToolDefinition(name=name, description=desc.strip()))
         elif hasattr(mcp_server, 'list_tools'):
             tools = mcp_server.list_tools()
             for tool in tools:
                 tool_defs.append(ToolDefinition(
                     name=getattr(tool, 'name', str(tool)),
-                    description=getattr(tool, 'description', ''),
+                    description=getattr(tool, 'description', '').strip(),
                 ))
-        else:
+
+        if not tool_defs:
             raise ValueError(
                 "Could not auto-extract tools from MCP server. "
-                "Use AgentEvaluator.from_tool_list() instead."
+                "Tried: _tool_manager._tools, _tools, list_tools(). "
+                "Use AgentEvaluator.from_tool_list() or pass tools manually."
             )
 
-        return cls(tools=tool_defs, **kwargs)
+        return tool_defs
 
     def _build_tools_context(self) -> str:
         """Build a formatted string of all available tools for the judge prompt."""
