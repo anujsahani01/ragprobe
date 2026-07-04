@@ -108,12 +108,13 @@ class MCPTracer:
         auto_intercept: If True, monkey-patches server tools to record calls.
     """
 
-    def __init__(self, server: Any = None, auto_intercept: bool = False):
+    def __init__(self, server: Any = None, auto_intercept: bool = False, persist: str | None = None):
         self._server = server
         self._lock = threading.Lock()
         self._interactions: list[MCPInteraction] = []
         self._active: MCPInteraction | None = None
         self._tools: list[ToolDefinition] = []
+        self._persist_path = persist  # If set, append traces to this file after every interaction
 
         # Extract tools if server provided
         if server:
@@ -207,7 +208,31 @@ class MCPTracer:
         self._active.final_output = final_output
         self._active.end_time = datetime.now().isoformat()
         self._interactions.append(self._active)
+
+        # Persist immediately if path configured
+        if self._persist_path:
+            self._append_to_persist(self._active)
+
         self._active = None
+
+    def _append_to_persist(self, interaction: MCPInteraction) -> None:
+        """Append a single interaction to the persist file (JSONL — one JSON per line)."""
+        path = Path(self._persist_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        trace_data = {
+            "query": interaction.query,
+            "tool_calls": [
+                {"tool_name": tc.tool_name, "args": tc.args, "output": tc.output, "duration_ms": tc.duration_ms}
+                for tc in interaction.tool_calls
+            ],
+            "final_output": interaction.final_output,
+            "start_time": interaction.start_time,
+            "end_time": interaction.end_time,
+        }
+
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(trace_data) + "\n")
 
     # =========================================================================
     # Mode 2: Auto-Intercept (monkey-patch MCP tools)
@@ -296,3 +321,39 @@ class MCPTracer:
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+
+    @classmethod
+    def load_traces_from_file(cls, path: str | Path) -> list[AgentTrace]:
+        """
+        Load traces from a JSONL persist file (written by persist= parameter).
+
+        Each line is one JSON interaction. Returns AgentTrace objects ready
+        for AgentEvaluator.evaluate_batch().
+
+        Usage:
+            traces = MCPTracer.load_traces_from_file("traces/session.jsonl")
+            results = evaluator.evaluate_batch(traces)
+        """
+        path = Path(path)
+        if not path.exists():
+            return []
+
+        traces = []
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    traces.append(AgentTrace(
+                        query=data.get("query", ""),
+                        tools_called=[tc["tool_name"] for tc in data.get("tool_calls", [])],
+                        output=data.get("final_output", ""),
+                        tool_args=[tc.get("args", {}) for tc in data.get("tool_calls", [])],
+                        tool_outputs=[tc.get("output", "") for tc in data.get("tool_calls", [])],
+                    ))
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+        return traces
