@@ -112,7 +112,24 @@ print(agent_results.summary())
 ReportGenerator(agent_results).to_markdown("eval_results/agent_run_001_report.md")
 ```
 
-Both RAG and agent runs are also logged to MLflow via `log_to_mlflow` / `log_agent_to_mlflow`.
+Both RAG and agent runs are also logged to MLflow via `log_to_mlflow` / `log_agent_to_mlflow` (imported from `ragprobe.integrations`).
+
+### 4. Component-level drill-down
+
+Beyond the aggregate scores, the example uses `ComponentScorer` to score retrieval and generation *in isolation* per sample — pinpointing which stage drags quality down:
+
+```python
+from ragprobe import ComponentScorer
+
+scorer = ComponentScorer(threshold=0.7)
+component_results = scorer.score_from_dataset(dataset, adapter=adapter)
+
+for row in component_results:
+    for component in ("retrieval", "generation"):
+        for metric, data in row[component].items():
+            status = "PASS" if data["passed"] else "FAIL"
+            print(f"[{component}] {metric}: {data['score']:.3f} ({status})")
+```
 
 ---
 
@@ -148,6 +165,7 @@ python ragprobe_adapter.py
 | Plug into any RAG via one adapter | `MyCustomAdapter` over `RAGPipeline` |
 | Auto dataset from real data | `generate_from_chunks(chunks)` |
 | Per-component RAG scoring | `RagEvaluator.evaluate()` |
+| Component-level drill-down | `ComponentScorer.score_from_dataset()` |
 | Reference-free agent eval | `AgentEvaluator.from_mcp_server()` |
 | Trace capture (decorator + middleware) | `@traced_tool()` + `TraceMiddleware` |
 | Reports + MLflow | `ReportGenerator` + `log_*_to_mlflow` |

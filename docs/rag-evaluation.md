@@ -197,7 +197,41 @@ sys.exit(results.exit_code())     # non-zero fails the pipeline
 
 ---
 
-## 8. Live evaluation (score in production)
+## 8. Score components in isolation
+
+`RagEvaluator` gives you the aggregate picture. When you want to drill into *one component at a time* — "is it retrieval or generation that's dragging the score down?" — use `ComponentScorer`. It runs the retrieval and generation metrics separately.
+
+```python
+from ragprobe import ComponentScorer
+
+scorer = ComponentScorer(threshold=0.7)
+
+# Score a whole dataset through your adapter (runs retrieve + generate live)
+results = scorer.score_from_dataset(dataset, adapter=MyRAG())
+
+for row in results:
+    print(row["question"])
+    for component in ("retrieval", "generation"):
+        for metric, data in row[component].items():
+            status = "PASS" if data["passed"] else "FAIL"
+            print(f"  [{component}] {metric}: {data['score']:.3f} ({status})")
+```
+
+`score_from_dataset(dataset, adapter=...)` returns a list of dicts — one per sample — each shaped like:
+
+```python
+{
+  "question": "...",
+  "retrieval":  {"context_precision": {"score": .., "passed": .., "reason": ".."}, ...},
+  "generation": {"answer_relevancy":  {"score": .., "passed": .., "reason": ".."}, ...},
+}
+```
+
+Omit `adapter` to score against the dataset's own `source_chunk`/`expected_answer` (a sanity check on the data itself). For finer control there are also `score_retrieval(...)`, `score_generation(...)`, `score_reranker(...)`, and `score_chunk_quality(...)`.
+
+---
+
+## 9. Live evaluation (score in production)
 
 Instead of a batch run, score every call as it flows through your pipeline with the `@live_eval` decorator. Your function must return a dict with `answer` and `retrieval_context`.
 

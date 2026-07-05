@@ -4,7 +4,7 @@ Every public symbol, grouped by area. Import top-level names from `ragprobe`; a 
 
 ```python
 from ragprobe import (
-    RagEvaluator, EvalResults, SampleResult, ComponentScore,
+    RagEvaluator, EvalResults, SampleResult, ComponentScore, ComponentScorer,
     EvalAdapter, RetrievalResult, GenerationResult,
     DatasetGenerator, EvalDataset, EvalSample,
     AgentEvaluator, AgentTrace, AgentTraceResult, AgentEvalResults, ToolDefinition,
@@ -258,10 +258,32 @@ from ragprobe.evaluator.live import get_scores, clear_scores
 
 ---
 
+## Component scoring
+
+Score retrieval and generation in isolation.
+
+```python
+from ragprobe import ComponentScorer
+
+ComponentScorer(threshold: float = 0.7)
+```
+
+| Method | Signature | Returns |
+|--------|-----------|---------|
+| `score_from_dataset` | `(dataset, adapter=None)` | `list[dict]` — per-sample `{question, retrieval, generation}` |
+| `score_retrieval` | `(query, retrieved_chunks, expected_answer, actual_answer="")` | `list[ScoreResult]` |
+| `score_generation` | `(query, answer, context)` | `list[ScoreResult]` |
+| `score_reranker` | `(query, original_order, reranked_order, expected_answer)` | `list[ScoreResult]` |
+| `score_chunk_quality` | `(chunk)` | `list[ScoreResult]` |
+
+`ScoreResult` = `(metric, score, reason, passed)`. When `adapter` is passed to `score_from_dataset`, it runs `retrieve` + `generate` live; when omitted, it scores against the dataset's own `source_chunk` / `expected_answer`.
+
+---
+
 ## Integrations (submodule)
 
 ```python
-from ragprobe.integrations.mlflow_logger import log_to_mlflow, log_agent_to_mlflow
+from ragprobe.integrations import log_to_mlflow, log_agent_to_mlflow
 ```
 
 | Function | Signature |
@@ -269,7 +291,7 @@ from ragprobe.integrations.mlflow_logger import log_to_mlflow, log_agent_to_mlfl
 | `log_to_mlflow` | `(results, experiment_name="ragprobe_rag_eval", run_name=None, params=None, tags=None) → str` |
 | `log_agent_to_mlflow` | `(results, experiment_name="ragprobe_agent_eval", run_name=None, params=None, tags=None) → str` |
 
-Requires `pip install "ragprobe[mlflow]"`.
+Requires `pip install "ragprobe[mlflow]"`. (These are re-exported from `ragprobe.integrations`; the underlying module is `ragprobe.integrations.mlflow_logger`.)
 
 ---
 
@@ -277,5 +299,4 @@ Requires `pip install "ragprobe[mlflow]"`.
 
 - **Judge key required:** metrics call an LLM judge (DeepEval), so `OPENAI_API_KEY` must be set.
 - **`Logs/` directory:** importing ragprobe configures a log file under `Logs/`. Create the directory (`mkdir Logs`) before first run to avoid a startup error.
-- **MLflow import path:** `log_to_mlflow` / `log_agent_to_mlflow` are only in `ragprobe.integrations.mlflow_logger`, not the top-level package.
-- **`ComponentScorer`** (score a single component in isolation) lives in `ragprobe.evaluator.component_scores` and is not exported at the top level.
+- **MLflow helpers import from `ragprobe.integrations`** (not the top-level package): `log_to_mlflow` / `log_agent_to_mlflow`. They require the `[mlflow]` extra.

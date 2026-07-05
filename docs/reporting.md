@@ -42,12 +42,12 @@ Track evaluations as MLflow runs to compare quality over time, across branches, 
 pip install "ragprobe[mlflow]"
 ```
 
-> The MLflow helpers live in `ragprobe.integrations.mlflow_logger` — import them from there (they are not exposed at the top level).
+> The MLflow helpers are re-exported from `ragprobe.integrations` (they aren't on the top-level `ragprobe` package). Importing them requires the `[mlflow]` extra.
 
 ### Log a RAG run
 
 ```python
-from ragprobe.integrations.mlflow_logger import log_to_mlflow
+from ragprobe.integrations import log_to_mlflow
 
 run_id = log_to_mlflow(
     results,
@@ -63,7 +63,7 @@ Logs summary metrics (`pass_rate`, `retrieval_hit_rate`, per-metric and per-comp
 ### Log an agent run
 
 ```python
-from ragprobe.integrations.mlflow_logger import log_agent_to_mlflow
+from ragprobe.integrations import log_agent_to_mlflow
 
 log_agent_to_mlflow(
     agent_results,
@@ -89,7 +89,7 @@ Compare runs side by side, chart per-query scores, and download the archived JSO
 ```python
 import sys
 from ragprobe import RagEvaluator, ReportGenerator
-from ragprobe.integrations.mlflow_logger import log_to_mlflow
+from ragprobe.integrations import log_to_mlflow
 
 results = RagEvaluator(adapter=MyRAG()).evaluate(dataset, run_id="run_042")
 

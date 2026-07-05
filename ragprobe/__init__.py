@@ -37,6 +37,7 @@ Usage:
 """
 
 from ragprobe.evaluator.core import RagEvaluator, EvalResults, SampleResult, ComponentScore
+from ragprobe.evaluator.component_scores import ComponentScorer
 from ragprobe.adapters.base import EvalAdapter, RetrievalResult, GenerationResult
 from ragprobe.dataset.generator import DatasetGenerator, EvalDataset, EvalSample
 from ragprobe.evaluator.live import live_eval, get_scores_summary, export_scores
@@ -57,6 +58,7 @@ __all__ = [
     "EvalResults",
     "SampleResult",
     "ComponentScore",
+    "ComponentScorer",
     "EvalAdapter",
     "RetrievalResult",
     "GenerationResult",
