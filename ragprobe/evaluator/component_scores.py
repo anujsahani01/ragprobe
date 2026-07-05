@@ -57,10 +57,77 @@ class ComponentScorer:
     Score individual pipeline components in isolation.
 
     This lets you pinpoint EXACTLY which component is degrading quality.
+
+    Can be used in two ways:
+    1. Manual — pass individual queries and chunks directly
+    2. From dataset — pass an EvalDataset and an adapter, score all samples
+
+    Usage (from dataset):
+        from ragprobe import ComponentScorer, DatasetGenerator, EvalAdapter
+
+        scorer = ComponentScorer()
+        results = scorer.score_from_dataset(dataset, adapter=my_adapter)
+        for r in results:
+            print(r)
     """
 
     def __init__(self, threshold: float = 0.7):
         self.threshold = threshold
+
+    def score_from_dataset(
+        self,
+        dataset,  # EvalDataset
+        adapter=None,  # EvalAdapter (optional — if provided, runs retrieve+generate live)
+    ) -> list[dict]:
+        """
+        Score all samples in a dataset.
+
+        If adapter is provided: runs retrieve + generate through the adapter, then scores.
+        If adapter is None: uses the expected_answer and source_chunk from the dataset directly.
+
+        Returns a list of dicts, one per sample, with all metric scores.
+        """
+        from ragprobe.dataset.generator import EvalDataset
+
+        results = []
+        for sample in dataset:
+            sample_scores = {}
+            sample_scores["question"] = sample.question
+
+            if adapter:
+                # Live scoring — call the real pipeline
+                retrieval_result = adapter.retrieve(sample.question)
+                gen_result = adapter.generate(sample.question, retrieval_result.chunks)
+
+                retrieval_scores = self.score_retrieval(
+                    query=sample.question,
+                    retrieved_chunks=retrieval_result.chunks,
+                    expected_answer=sample.expected_answer,
+                    actual_answer=gen_result.answer,
+                )
+                generation_scores = self.score_generation(
+                    query=sample.question,
+                    answer=gen_result.answer,
+                    context=retrieval_result.chunks,
+                )
+            else:
+                # Static scoring — use dataset's source_chunk as context
+                retrieval_scores = self.score_retrieval(
+                    query=sample.question,
+                    retrieved_chunks=[sample.source_chunk],
+                    expected_answer=sample.expected_answer,
+                )
+                generation_scores = self.score_generation(
+                    query=sample.question,
+                    answer=sample.expected_answer,
+                    context=[sample.source_chunk],
+                )
+
+            sample_scores["retrieval"] = {s.metric: {"score": s.score, "passed": s.passed, "reason": s.reason} for s in retrieval_scores}
+            sample_scores["generation"] = {s.metric: {"score": s.score, "passed": s.passed, "reason": s.reason} for s in generation_scores}
+            results.append(sample_scores)
+
+        return results
 
     def score_retrieval(
         self,
