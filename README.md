@@ -2,7 +2,7 @@
 
 **Pluggable evaluation for RAG pipelines and AI agents.**
 
-`pip install ragprobe` → wrap your pipeline in an adapter → get per-component scores. No test cases to hand-write, no ground truth required.
+Install, wrap your pipeline in an adapter, get per-component scores. No test cases to hand-write, no ground truth required.
 
 ```
    Your RAG / Agent  ──▶  ragprobe  ──▶  Scores · Reports · CI gates
@@ -66,10 +66,17 @@ Plus: **auto dataset generation**, **live scoring** decorators, **trace capture*
 
 ## Install
 
+Install directly from GitHub:
+
 ```bash
-pip install ragprobe                 # core
-pip install "ragprobe[mlflow]"       # + MLflow logging
+# core
+pip install git+https://github.com/anujsahani01/ragprobe.git
+
+# + MLflow logging
+pip install "ragprobe[mlflow] @ git+https://github.com/anujsahani01/ragprobe.git"
 ```
+
+> Pin a specific version by appending `@<tag>` (e.g. `...ragprobe.git@v0.3.0`). In a `requirements.txt`: `ragprobe @ git+https://github.com/anujsahani01/ragprobe.git`.
 
 Requires **Python 3.11+**. The metrics use an LLM judge (via DeepEval), so set an API key:
 

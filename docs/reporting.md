@@ -39,7 +39,7 @@ The same data as a structured object: `summary`, `scores_by_metric` / `scores_by
 Track evaluations as MLflow runs to compare quality over time, across branches, or across config changes. MLflow is an **optional** dependency.
 
 ```bash
-pip install "ragprobe[mlflow]"
+pip install "ragprobe[mlflow] @ git+https://github.com/anujsahani01/ragprobe.git"
 ```
 
 > The MLflow helpers are re-exported from `ragprobe.integrations` (they aren't on the top-level `ragprobe` package). Importing them requires the `[mlflow]` extra.

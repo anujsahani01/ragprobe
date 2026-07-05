@@ -9,7 +9,7 @@ Go from install to your first scores in about 5 minutes. Copy-paste each block i
 ## 1. Install
 
 ```bash
-pip install ragprobe
+pip install git+https://github.com/anujsahani01/ragprobe.git
 ```
 
 Set your judge key (metrics call an LLM to score quality):

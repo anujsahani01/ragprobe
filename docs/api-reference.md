@@ -291,7 +291,7 @@ from ragprobe.integrations import log_to_mlflow, log_agent_to_mlflow
 | `log_to_mlflow` | `(results, experiment_name="ragprobe_rag_eval", run_name=None, params=None, tags=None) → str` |
 | `log_agent_to_mlflow` | `(results, experiment_name="ragprobe_agent_eval", run_name=None, params=None, tags=None) → str` |
 
-Requires `pip install "ragprobe[mlflow]"`. (These are re-exported from `ragprobe.integrations`; the underlying module is `ragprobe.integrations.mlflow_logger`.)
+Requires the `mlflow` extra: `pip install "ragprobe[mlflow] @ git+https://github.com/anujsahani01/ragprobe.git"`. (These are re-exported from `ragprobe.integrations`; the underlying module is `ragprobe.integrations.mlflow_logger`.)
 
 ---
 
